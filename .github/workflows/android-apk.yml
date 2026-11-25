@@ -5,6 +5,9 @@ on:
     branches: [main]
   workflow_dispatch:
 
+permissions:
+  contents: write
+
 jobs:
   build:
     runs-on: ubuntu-latest
@@ -27,3 +30,13 @@ jobs:
         with:
           name: TripMate-apk
           path: build/app/outputs/flutter-apk/app-release.apk
+      - name: Publish APK as a GitHub release
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          TAG="build-${{ github.run_number }}"
+          cp build/app/outputs/flutter-apk/app-release.apk TripMate-release.apk
+          gh release create "$TAG" TripMate-release.apk \
+            --title "TripMate build ${{ github.run_number }}" \
+            --notes "Installable Android APK built from ${{ github.sha }}. Demo login mode: OTP is 123456." \
+            --latest
