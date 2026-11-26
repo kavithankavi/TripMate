@@ -4,20 +4,10 @@ import '../services/services.dart';
 import '../theme.dart';
 import '../widgets/format.dart';
 import 'history_screen.dart';
-import 'pin_login_screen.dart';
-import 'pin_setup_screen.dart';
 import 'trip_actions.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
-
-  void _lock(BuildContext context) {
-    // Locking keeps a running trip recording; only the screen is locked.
-    Services.session.lock();
-    Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const PinLoginScreen()),
-        (_) => false);
-  }
 
   @override
   Widget build(BuildContext context) {
@@ -25,23 +15,6 @@ class HomeScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: const Text('TripMate'),
-        actions: [
-          PopupMenuButton<String>(
-            tooltip: 'Menu',
-            onSelected: (v) {
-              if (v == 'pin') {
-                Navigator.of(context).push(MaterialPageRoute<void>(
-                    builder: (_) => const PinSetupScreen()));
-              } else if (v == 'lock') {
-                _lock(context);
-              }
-            },
-            itemBuilder: (_) => const [
-              PopupMenuItem(value: 'pin', child: Text('Change PIN')),
-              PopupMenuItem(value: 'lock', child: Text('Lock')),
-            ],
-          ),
-        ],
       ),
       body: SafeArea(
         child: ListenableBuilder(

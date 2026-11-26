@@ -13,10 +13,7 @@ TripMate records car trips. While a trip runs it shows your speed on a speedomet
 
 | Area | What it does |
 |---|---|
-| First launch | Create a 4 digit PIN (enter it twice). No mobile number, OTP or account |
-| Login | Enter the 4 digit PIN every time the app opens. It unlocks as soon as the 4th digit is typed |
-| PIN | Change it from the menu (top right). **Lock** returns to the PIN screen (a running trip keeps recording). Stored only as a salted hash in the Android Keystore / iOS Keychain. 5 wrong tries lock the PIN screen for 30 seconds |
-| Forgot PIN | Erases the trips saved on this phone and lets you create a new PIN (there is no account to recover it from) |
+| Opening the app | Goes straight to the Home screen. No login, PIN, mobile number or account |
 | Orientation | Portrait only, on phones and tablets |
 | Start trip | Asks for a name (default `Trip1`, `Trip2`, ... with the start date and time shown), then opens the live view |
 | Live view | Speedometer dial + numeric speed, latitude, longitude, altitude, distance, max and average speed, elapsed time, and a square route map in the bottom right corner |
@@ -41,18 +38,17 @@ lib/
   models/trip.dart           Trip and TrackPoint
   data/trip_database.dart    SQLite (sqflite)
   services/
-    session_store.dart       Hashed PIN, lockout and unlock state in secure storage
     sampling.dart            3 s / 10 s sampling rule
     trip_tracker.dart        Location sampling, battery rules, idle auto-stop
     services.dart            Creates the services at start-up
-  screens/                   PIN setup, PIN login, home, live trip, history, details
+  screens/                   Home, live trip, history, details
   widgets/                   Speedometer and line graphs (CustomPainter), route map, logo, timed alert
 tool/make_icons.py           Regenerates the launcher icon PNGs
 ```
 
 No images are bundled. The logo, speedometer and icons are drawn in code or as small vector files. Map tiles are downloaded only while a map is on screen.
 
-Packages used (kept to a minimum): `geolocator`, `battery_plus`, `sqflite`, `path`, `flutter_map`, `latlong2`, `geocoding`, `flutter_secure_storage`, `crypto`, `intl`. The graphs are drawn in code, so no chart package is needed.
+Packages used (kept to a minimum): `geolocator`, `battery_plus`, `sqflite`, `path`, `flutter_map`, `latlong2`, `geocoding`, `intl`. The graphs are drawn in code, so no chart package is needed.
 
 ---
 
@@ -72,7 +68,7 @@ Packages used (kept to a minimum): `geolocator`, `battery_plus`, `sqflite`, `pat
    flutter pub get
    ```
 3. Start an emulator or plug in a phone (pick it in the bottom right of VS Code).
-4. Press **F5** and choose **TripMate**. On first launch the app asks you to create a 4 digit PIN.
+4. Press **F5** and choose **TripMate**.
 
 > Tip: location is easiest to test on a real phone in a car. On the Android emulator use **Extended controls > Location > Routes** to play back a route. On the iOS Simulator use **Features > Location > Freeway Drive**.
 
@@ -172,24 +168,22 @@ To change the launcher icon, edit `tool/make_icons.py` (colours and shapes) and 
 
 These are guesses. Each is easy to change, so tell me if you want something different.
 
-1. **PIN only:** there is no mobile number, OTP or account. The PIN is asked every time the app opens (and after **Lock** in the menu). Trips are stored only on this phone.
-2. **Forgot PIN:** because there is no account, the only way back in is to erase the saved trips and create a new PIN. After 5 wrong tries the PIN screen waits 30 seconds before the next try.
-3. **Upgrading from 1.0.0:** the old phone-number login and its PIN are not carried over. After installing this version you create a new PIN; saved trips stay.
-4. **Trip names:** `Trip1`, `Trip2`, ... counting up, with the start date and time shown next to the name everywhere. You can type your own name when starting, or rename later.
-5. **Prev / Next:** on the details screen, Prev trip goes to the older trip and Next trip to the newer one.
-6. **Idle:** "idle" means the car has not moved more than 50 m and speed stayed under 3 km/h. When a trip auto-stops, its end time is set to the moment the car last moved, so 2 idle hours do not lower the average speed.
-7. **Average speed:** distance divided by total trip time (including traffic stops).
-8. **Start / stop location:** shown as an address when the phone can look one up (uses the phone's built-in geocoder, no API key), always with coordinates as well.
-9. **Map:** OpenStreetMap through `flutter_map`, no API key. OSM's public tile servers are fine for light use. If the app becomes popular, switch to a tile provider with a plan (MapTiler, Stadia, Thunderforest) by changing `urlTemplate` in `lib/widgets/route_map.dart`.
-10. **Units:** km/h, km and metres only. Altitude is GPS altitude above sea level and can be off by 10 to 30 m.
-11. **Sampling:** TripMate saves a point every 3 seconds, or every 10 seconds when the battery is below 30% (checked every minute and whenever charging starts or stops). The GPS delivers a reading every second and TripMate keeps the ones that are due, because restarting the Android background service to change its rate is blocked by Android 12+ while the app is in the background. So below 30% the saving is in database writes and screen updates, not in the GPS itself.
-12. **Graphs:** speed and altitude are drawn against time since the trip started, across the whole trip. The dashed line in the speed graph is the trip's average speed (distance divided by total time), the same number shown in the details. GPS altitude can jump by 10 to 30 m, so small bumps in the altitude graph are normal.
-13. **Map credit:** the bottom corner of the map shows only "© OpenStreetMap" (the "flutter_map" prefix is gone). OpenStreetMap's tile policy requires this credit, so it stays.
-14. **History limit:** only the last 10 trips are kept; older trips are deleted from the database automatically.
-15. **Bundle id `com.tripmate`:** used as requested. If Apple or Google says it is already taken, a reverse-domain id you own (for example `com.yourname.tripmate`) is needed; change it in `android/app/build.gradle.kts` (`applicationId`) and in Xcode.
+1. **No login:** there is no mobile number, OTP, PIN or account. Anyone who can open the phone can open TripMate. Trips are stored only on this phone.
+2. **Trip names:** `Trip1`, `Trip2`, ... counting up, with the start date and time shown next to the name everywhere. You can type your own name when starting, or rename later.
+3. **Prev / Next:** on the details screen, Prev trip goes to the older trip and Next trip to the newer one.
+4. **Idle:** "idle" means the car has not moved more than 50 m and speed stayed under 3 km/h. When a trip auto-stops, its end time is set to the moment the car last moved, so 2 idle hours do not lower the average speed.
+5. **Average speed:** distance divided by total trip time (including traffic stops).
+6. **Start / stop location:** shown as an address when the phone can look one up (uses the phone's built-in geocoder, no API key), always with coordinates as well.
+7. **Map:** OpenStreetMap through `flutter_map`, no API key. OSM's public tile servers are fine for light use. If the app becomes popular, switch to a tile provider with a plan (MapTiler, Stadia, Thunderforest) by changing `urlTemplate` in `lib/widgets/route_map.dart`.
+8. **Units:** km/h, km and metres only. Altitude is GPS altitude above sea level and can be off by 10 to 30 m.
+9. **Sampling:** TripMate saves a point every 3 seconds, or every 10 seconds when the battery is below 30% (checked every minute and whenever charging starts or stops). The GPS delivers a reading every second and TripMate keeps the ones that are due, because restarting the Android background service to change its rate is blocked by Android 12+ while the app is in the background. So below 30% the saving is in database writes and screen updates, not in the GPS itself.
+10. **Graphs:** speed and altitude are drawn against time since the trip started, across the whole trip. The dashed line in the speed graph is the trip's average speed (distance divided by total time), the same number shown in the details. GPS altitude can jump by 10 to 30 m, so small bumps in the altitude graph are normal.
+11. **Map credit:** the bottom corner of the map shows only "© OpenStreetMap" (the "flutter_map" prefix is gone). OpenStreetMap's tile policy requires this credit, so it stays.
+12. **History limit:** only the last 10 trips are kept; older trips are deleted from the database automatically.
+13. **Bundle id `com.tripmate`:** used as requested. If Apple or Google says it is already taken, a reverse-domain id you own (for example `com.yourname.tripmate`) is needed; change it in `android/app/build.gradle.kts` (`applicationId`) and in Xcode.
 
 ## 7. What was checked
 
 - `flutter analyze`: no issues (Flutter 3.50.1, Dart 3.14).
-- `flutter test`: passes (formatting, PIN storage and lockout, 3 s / 10 s sampling, graph axis and rendering).
+- `flutter test`: passes (formatting, 3 s / 10 s sampling, graph axis and rendering).
 - Not yet built on a real Android/iOS device. Do a test drive before publishing, especially background recording with the screen off.

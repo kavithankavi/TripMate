@@ -3,8 +3,7 @@ import 'dart:async';
 import 'package:material_ui/material_ui.dart';
 
 import 'config.dart';
-import 'screens/pin_login_screen.dart';
-import 'screens/pin_setup_screen.dart';
+import 'screens/home_screen.dart';
 import 'screens/trip_detail_screen.dart';
 import 'services/services.dart';
 import 'services/trip_tracker.dart';
@@ -43,8 +42,6 @@ class _TripMateAppState extends State<TripMateApp> {
           duration: AppConfig.lowBatteryAlertDuration,
         );
       case AutoStoppedEvent(:final trip):
-        // Don't show trip details over the PIN screen.
-        if (!Services.session.isUnlocked) return;
         navigatorKey.currentState?.push(MaterialPageRoute<void>(
           builder: (_) => TripDetailScreen(
             trips: [trip],
@@ -69,9 +66,7 @@ class _TripMateAppState extends State<TripMateApp> {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       theme: buildTheme(),
-      home: Services.session.hasPin
-          ? const PinLoginScreen()
-          : const PinSetupScreen(firstTime: true),
+      home: const HomeScreen(),
     );
   }
 }
