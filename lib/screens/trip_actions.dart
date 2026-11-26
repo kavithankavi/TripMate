@@ -2,7 +2,7 @@ import 'package:material_ui/material_ui.dart';
 
 import '../services/services.dart';
 import '../widgets/format.dart';
-import 'auth_flow.dart';
+import '../widgets/snack.dart';
 import 'live_trip_screen.dart';
 import 'trip_detail_screen.dart';
 

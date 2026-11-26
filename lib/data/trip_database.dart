@@ -90,4 +90,11 @@ class TripDatabase {
 
   Future<void> deleteTrip(int id) async =>
       (await db).delete('trips', where: 'id = ?', whereArgs: [id]);
+
+  /// Erases every trip and point (used by "Forgot PIN").
+  Future<void> deleteAllTrips() async {
+    final d = await db;
+    await d.delete('points');
+    await d.delete('trips');
+  }
 }

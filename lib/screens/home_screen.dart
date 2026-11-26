@@ -4,41 +4,18 @@ import '../services/services.dart';
 import '../theme.dart';
 import '../widgets/format.dart';
 import 'history_screen.dart';
-import 'landing_screen.dart';
+import 'pin_login_screen.dart';
 import 'pin_setup_screen.dart';
 import 'trip_actions.dart';
 
 class HomeScreen extends StatelessWidget {
   const HomeScreen({super.key});
 
-  Future<void> _logout(BuildContext context) async {
-    final tracking = Services.tracker.isTracking;
-    final ok = await showDialog<bool>(
-      context: context,
-      builder: (ctx) => AlertDialog(
-        title: const Text('Log out?'),
-        content: Text(tracking
-            ? 'Your current trip will be stopped and saved.'
-            : 'You will need to log in again with OTP or PIN.'),
-        actions: [
-          TextButton(
-              onPressed: () => Navigator.pop(ctx, false),
-              child: const Text('Cancel')),
-          FilledButton(
-            style: FilledButton.styleFrom(minimumSize: const Size(96, 44)),
-            onPressed: () => Navigator.pop(ctx, true),
-            child: const Text('Log out'),
-          ),
-        ],
-      ),
-    );
-    if (ok != true) return;
-    if (tracking) await Services.tracker.stop();
-    await Services.auth.signOut();
-    await Services.session.clearSession();
-    if (!context.mounted) return;
+  void _lock(BuildContext context) {
+    // Locking keeps a running trip recording; only the screen is locked.
+    Services.session.lock();
     Navigator.of(context).pushAndRemoveUntil(
-        MaterialPageRoute<void>(builder: (_) => const LandingScreen()),
+        MaterialPageRoute<void>(builder: (_) => const PinLoginScreen()),
         (_) => false);
   }
 
@@ -55,13 +32,13 @@ class HomeScreen extends StatelessWidget {
               if (v == 'pin') {
                 Navigator.of(context).push(MaterialPageRoute<void>(
                     builder: (_) => const PinSetupScreen()));
-              } else if (v == 'logout') {
-                _logout(context);
+              } else if (v == 'lock') {
+                _lock(context);
               }
             },
             itemBuilder: (_) => const [
-              PopupMenuItem(value: 'pin', child: Text('Set / change PIN')),
-              PopupMenuItem(value: 'logout', child: Text('Log out')),
+              PopupMenuItem(value: 'pin', child: Text('Change PIN')),
+              PopupMenuItem(value: 'lock', child: Text('Lock')),
             ],
           ),
         ],
@@ -74,9 +51,6 @@ class HomeScreen extends StatelessWidget {
             return ListView(
               padding: const EdgeInsets.all(20),
               children: [
-                Text('Signed in as ${Services.session.phone ?? ''}',
-                    style: const TextStyle(color: AppColors.muted)),
-                const SizedBox(height: 16),
                 Card(
                   child: ListTile(
                     contentPadding: const EdgeInsets.symmetric(

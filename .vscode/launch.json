@@ -2,17 +2,10 @@
   "version": "0.2.0",
   "configurations": [
     {
-      "name": "TripMate (demo OTP 123456)",
+      "name": "TripMate",
       "request": "launch",
       "type": "dart",
       "program": "lib/main.dart"
-    },
-    {
-      "name": "TripMate (Firebase OTP)",
-      "request": "launch",
-      "type": "dart",
-      "program": "lib/main.dart",
-      "args": ["--dart-define=AUTH_MODE=firebase"]
     }
   ]
 }

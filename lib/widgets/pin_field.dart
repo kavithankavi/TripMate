@@ -10,6 +10,8 @@ class PinField extends StatelessWidget {
     this.autofocus = false,
     this.validator,
     this.onSubmitted,
+    this.onChanged,
+    this.enabled = true,
   });
 
   final TextEditingController controller;
@@ -17,11 +19,14 @@ class PinField extends StatelessWidget {
   final bool autofocus;
   final String? Function(String?)? validator;
   final ValueChanged<String>? onSubmitted;
+  final ValueChanged<String>? onChanged;
+  final bool enabled;
 
   @override
   Widget build(BuildContext context) => TextFormField(
         controller: controller,
         autofocus: autofocus,
+        enabled: enabled,
         obscureText: true,
         obscuringCharacter: '●',
         keyboardType: TextInputType.number,
@@ -33,5 +38,6 @@ class PinField extends StatelessWidget {
         validator: validator ??
             (v) => (v ?? '').length == 4 ? null : 'Enter 4 digits',
         onFieldSubmitted: onSubmitted,
+        onChanged: onChanged,
       );
 }

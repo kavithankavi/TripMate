@@ -10,6 +10,7 @@ import 'package:latlong2/latlong.dart';
 import '../config.dart';
 import '../data/trip_database.dart';
 import '../models/trip.dart';
+import 'sampling.dart';
 
 class TrackingException implements Exception {
   TrackingException(this.message);
@@ -30,7 +31,7 @@ class AutoStoppedEvent extends TrackerEvent {
   final Trip trip;
 }
 
-/// Records a trip: samples the location every 10 s (30 s on low battery),
+/// Records a trip: samples the location every 3 s (10 s below 30% battery),
 /// keeps running in the background through a foreground service on Android
 /// and background location updates on iOS, and stops after 2 h idle.
 class TripTracker extends ChangeNotifier {
@@ -142,7 +143,9 @@ class TripTracker extends ChangeNotifier {
       return AndroidSettings(
         accuracy: LocationAccuracy.high,
         distanceFilter: 0,
-        intervalDuration: AppConfig.sampleInterval,
+        // GPS fixes arrive every second and are thinned in _onPosition to
+        // 3 s (or 10 s on low battery), so both rates are exact.
+        intervalDuration: const Duration(seconds: 1),
         foregroundNotificationConfig: const ForegroundNotificationConfig(
           notificationTitle: 'TripMate is recording your trip',
           notificationText: 'Tap to open. Stop the trip in the app.',
@@ -179,13 +182,10 @@ class TripTracker extends ChangeNotifier {
     if (trip == null) return;
     final now = p.timestamp;
 
-    // Keep one sample per interval (10 s, or 30 s on low battery).
-    // iOS delivers updates continuously, Android every 10 s.
-    final lastAt = _lastAccepted;
-    if (lastAt != null &&
-        now.difference(lastAt) < _interval - const Duration(seconds: 2)) {
-      return;
-    }
+    // Keep one sample per interval (3 s, or 10 s on low battery).
+    // Both platforms deliver a fix about every second. The small tolerance
+    // absorbs timing jitter so a fix that is due is not skipped.
+    if (!isSampleDue(_lastAccepted, now, _interval)) return;
     _lastAccepted = now;
 
     final prev = _last;
@@ -258,16 +258,15 @@ class TripTracker extends ChangeNotifier {
     }
     _batteryLevel = level;
     final low = level < AppConfig.lowBatteryThreshold;
-    final wanted =
-        low ? AppConfig.lowBatterySampleInterval : AppConfig.sampleInterval;
+    final wanted = sampleIntervalFor(level);
     if (low && !_lowBatteryAlerted && isTracking) {
       _lowBatteryAlerted = true;
       _events.add(LowBatteryEvent(level));
     }
     if (!low) _lowBatteryAlerted = false;
-    // The position stream keeps running at the base rate and samples are
-    // thinned in _onPosition. Restarting the stream would restart the
-    // Android foreground service, which Android 12+ blocks from background.
+    // The position stream keeps running at 1 s and samples are thinned in
+    // _onPosition. Restarting the stream would restart the Android
+    // foreground service, which Android 12+ blocks from the background.
     _interval = wanted;
     notifyListeners();
   }
