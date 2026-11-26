@@ -4,7 +4,6 @@ import 'package:material_ui/material_ui.dart';
 
 import 'config.dart';
 import 'screens/home_screen.dart';
-import 'screens/landing_screen.dart';
 import 'screens/trip_detail_screen.dart';
 import 'services/services.dart';
 import 'services/trip_tracker.dart';
@@ -39,7 +38,7 @@ class _TripMateAppState extends State<TripMateApp> {
           ctx,
           title: 'Battery low ($level%)',
           message: 'Please charge your phone. To save power, TripMate now '
-              'records your location every 30 seconds.',
+              'records your location every 10 seconds.',
           duration: AppConfig.lowBatteryAlertDuration,
         );
       case AutoStoppedEvent(:final trip):
@@ -67,9 +66,7 @@ class _TripMateAppState extends State<TripMateApp> {
       debugShowCheckedModeBanner: false,
       navigatorKey: navigatorKey,
       theme: buildTheme(),
-      home: Services.session.isLoggedIn
-          ? const HomeScreen()
-          : const LandingScreen(),
+      home: const HomeScreen(),
     );
   }
 }

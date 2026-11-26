@@ -5,6 +5,7 @@ import '../models/trip.dart';
 import '../services/services.dart';
 import '../theme.dart';
 import '../widgets/format.dart';
+import '../widgets/line_chart.dart';
 import '../widgets/route_map.dart';
 
 /// Details of one trip, with Prev (older) and Next (newer) navigation.
@@ -28,7 +29,7 @@ class TripDetailScreen extends StatefulWidget {
 class _TripDetailScreenState extends State<TripDetailScreen> {
   late List<Trip> _trips = widget.trips;
   late int _index = widget.initialIndex;
-  Future<List<LatLng>>? _route;
+  Future<List<TrackPoint>>? _points;
 
   Trip get _trip => _trips[_index];
 
@@ -52,9 +53,7 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
   }
 
   void _loadRoute() {
-    _route = Services.db
-        .points(_trip.id!)
-        .then((pts) => pts.map((p) => LatLng(p.lat, p.lng)).toList());
+    _points = Services.db.points(_trip.id!);
   }
 
   void _go(int i) => setState(() {
@@ -126,12 +125,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
             borderRadius: BorderRadius.circular(16),
             child: SizedBox(
               height: 200,
-              child: FutureBuilder<List<LatLng>>(
+              child: FutureBuilder<List<TrackPoint>>(
                 key: ValueKey(t.id),
-                future: _route,
+                future: _points,
                 builder: (_, s) => s.hasData
                     ? RouteMap(
-                        route: s.data!, follow: false, interactive: true)
+                        route: [
+                          for (final p in s.data!) LatLng(p.lat, p.lng)
+                        ],
+                        follow: false,
+                        interactive: true)
                     : const ColoredBox(color: Color(0xFFE2EBEA)),
               ),
             ),
@@ -152,6 +155,16 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
               _Row(Icons.terrain_rounded, 'Max altitude',
                   fmtAlt(t.maxAltitudeM)),
             ]),
+          ),
+          const SizedBox(height: 12),
+          FutureBuilder<List<TrackPoint>>(
+            key: ValueKey('charts-${t.id}'),
+            future: _points,
+            builder: (_, s) => s.hasData
+                ? _TripCharts(trip: t, points: s.data!)
+                : const SizedBox(
+                    height: 120,
+                    child: Center(child: CircularProgressIndicator())),
           ),
           const SizedBox(height: 8),
           Text('Trip ${_trips.length - _index} of ${_trips.length}',
@@ -184,6 +197,78 @@ class _TripDetailScreenState extends State<TripDetailScreen> {
       ),
     );
   }
+}
+
+/// Speed and altitude over the whole trip, each in its own line graph.
+/// The speed graph also shows the trip's average speed as a dashed line.
+class _TripCharts extends StatelessWidget {
+  const _TripCharts({required this.trip, required this.points});
+  final Trip trip;
+  final List<TrackPoint> points;
+
+  @override
+  Widget build(BuildContext context) {
+    final start = trip.startTime;
+    final total = trip.duration;
+    ChartPoint at(TrackPoint p, double v) => ChartPoint(p.time.difference(start), v);
+    return Column(children: [
+      _ChartCard(
+        icon: Icons.speed_rounded,
+        title: 'Speed (km/h)',
+        child: TripLineChart(
+          points: [for (final p in points) at(p, p.speedKmh)],
+          total: total,
+          startAtZero: true,
+          reference: trip.avgSpeedKmh,
+          referenceLabel: 'Avg ${fmtSpeed(trip.avgSpeedKmh)}',
+        ),
+      ),
+      const SizedBox(height: 12),
+      _ChartCard(
+        icon: Icons.terrain_rounded,
+        title: 'Altitude (m)',
+        child: TripLineChart(
+          points: [for (final p in points) at(p, p.altitudeM)],
+          total: total,
+          color: AppColors.primaryDark,
+        ),
+      ),
+    ]);
+  }
+}
+
+class _ChartCard extends StatelessWidget {
+  const _ChartCard(
+      {required this.icon, required this.title, required this.child});
+  final IconData icon;
+  final String title;
+  final Widget child;
+
+  @override
+  Widget build(BuildContext context) => Card(
+        child: Padding(
+          padding: const EdgeInsets.fromLTRB(12, 12, 12, 8),
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Row(children: [
+                Icon(icon, color: AppColors.primary, size: 20),
+                const SizedBox(width: 8),
+                Text(title,
+                    style: const TextStyle(
+                        color: AppColors.text,
+                        fontSize: 15,
+                        fontWeight: FontWeight.w600)),
+                const Spacer(),
+                const Text('over trip time',
+                    style: TextStyle(color: AppColors.muted, fontSize: 12)),
+              ]),
+              const SizedBox(height: 10),
+              child,
+            ],
+          ),
+        ),
+      );
 }
 
 class _Row extends StatelessWidget {

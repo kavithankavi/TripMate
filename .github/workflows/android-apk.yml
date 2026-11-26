@@ -38,5 +38,5 @@ jobs:
           cp build/app/outputs/flutter-apk/app-release.apk TripMate-release.apk
           gh release create "$TAG" TripMate-release.apk \
             --title "TripMate build ${{ github.run_number }}" \
-            --notes "Installable Android APK built from ${{ github.sha }}. Demo login mode: OTP is 123456." \
+            --notes "Installable Android APK built from ${{ github.sha }}." \
             --latest

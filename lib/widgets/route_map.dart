@@ -96,12 +96,29 @@ class _RouteMapState extends State<RouteMap> {
               child: _Dot(
                   color: widget.follow ? AppColors.accent : AppColors.danger)),
         ]),
-        const SimpleAttributionWidget(
-          source: Text('© OpenStreetMap', style: TextStyle(fontSize: 9)),
-        ),
+        // Own credit label: flutter_map's SimpleAttributionWidget prefixes
+        // "flutter_map |". OpenStreetMap's tile policy still needs this credit.
+        const _OsmCredit(),
       ],
     );
   }
+}
+
+class _OsmCredit extends StatelessWidget {
+  const _OsmCredit();
+
+  @override
+  Widget build(BuildContext context) => const Align(
+        alignment: Alignment.bottomRight,
+        child: ColoredBox(
+          color: Color(0xB3FFFFFF),
+          child: Padding(
+            padding: EdgeInsets.symmetric(horizontal: 4, vertical: 1),
+            child: Text('© OpenStreetMap',
+                style: TextStyle(fontSize: 9, color: AppColors.text)),
+          ),
+        ),
+      );
 }
 
 class _Dot extends StatelessWidget {
